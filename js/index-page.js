@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 try {
                     window.history.replaceState(
                         { search: keyword }, 
-                        `搜索: ${keyword} - 发现TV`, 
+                        `搜索: ${keyword} - 发现TV`,
                         window.location.href
                     );
                 } catch (e) {
@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 window.history.replaceState(
                     { search: searchQuery }, 
-                    `搜索: ${searchQuery} - 发现TV`, 
+                    `搜索: ${searchQuery} - 发现TV`,
                     `/s=${encodeURIComponent(searchQuery)}`
                 );
             } catch (e) {

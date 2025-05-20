@@ -14,7 +14,7 @@ const PASSWORD_CONFIG = {
 const SITE_CONFIG = {
     name: '发现TV',
     url: 'https://faxiantv.com',
-    description: '免费在线视频搜索与观看平台',
+    description: '免费在线影视搜索与观看平台',
     logo: './image/retrotv_5520.png',
     version: '1.0.3'
 };

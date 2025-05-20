@@ -112,10 +112,22 @@ function initDouban() {
     }
 }
 
+// 将豆瓣区域从默认隐藏修改为始终显示
 function updateDoubanVisibility() {
+    // 获取相关DOM元素引用
     const doubanArea = document.getElementById('doubanArea');
-    if (doubanArea) doubanArea.classList.remove('hidden'); // 强制移除隐藏
-    // ...其他原有逻辑保持不变
+    const doubanResults = document.getElementById('douban-results');
+
+    // 元素不存在时提前返回
+    if (!doubanArea || !doubanResults) return;
+
+    // 始终显示豆瓣区域
+    doubanArea.classList.remove('hidden');
+
+    // 内容为空时加载推荐（保留加载逻辑）
+    if (doubanResults.children.length === 0) {
+        renderRecommend(doubanCurrentTag, doubanPageSize, doubanPageStart);
+    }
 }
 
 // 只填充搜索框，不执行搜索，让用户自主决定搜索时机

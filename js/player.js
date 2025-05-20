@@ -234,7 +234,7 @@ function initializePageContent() {
     }
 
     // 设置页面标题
-    document.title = currentVideoTitle + ' - 发现TV播放器';
+    document.title = currentVideoTitle + ' - 发现TV';
     document.getElementById('videoTitle').textContent = currentVideoTitle;
 
     // 初始化播放器

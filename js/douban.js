@@ -112,24 +112,20 @@ function initDouban() {
     }
 }
 
-// 根据设置更新豆瓣区域的显示状态
 function updateDoubanVisibility() {
+    // 获取相关DOM元素引用
     const doubanArea = document.getElementById('doubanArea');
-    if (!doubanArea) return;
-    
-    const isEnabled = localStorage.getItem('doubanEnabled') === 'true';
-    const isSearching = document.getElementById('resultsArea') && 
-        !document.getElementById('resultsArea').classList.contains('hidden');
-    
-    // 只有在启用且没有搜索结果显示时才显示豆瓣区域
-    if (isEnabled && !isSearching) {
-        doubanArea.classList.remove('hidden');
-        // 如果豆瓣结果为空，重新加载
-        if (document.getElementById('douban-results').children.length === 0) {
-            renderRecommend(doubanCurrentTag, doubanPageSize, doubanPageStart);
-        }
-    } else {
-        doubanArea.classList.add('hidden');
+    const doubanResults = document.getElementById('douban-results');
+
+    // 元素不存在时提前返回
+    if (!doubanArea || !doubanResults) return;
+
+    // 始终显示豆瓣区域
+    doubanArea.classList.remove('hidden');
+
+    // 内容为空时加载推荐（保留加载逻辑）
+    if (doubanResults.children.length === 0) {
+        renderRecommend(doubanCurrentTag, doubanPageSize, doubanPageStart);
     }
 }
 

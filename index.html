@@ -269,7 +269,21 @@
                     <div id="douban-results" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3"></div>
                 </div>
             </div>
-            
+
+            <!-- 搜索结果：初始隐藏 -->
+            <div id="resultsArea" class="w-full hidden">
+                <div class="mx-auto max-w-7xl px-2"> <!-- 添加最大宽度限制并居中 -->
+                    <div class="flex justify-end items-center mb-4">
+                        <div class="text-sm text-gray-400">
+                            <span id="searchResultsCount">0</span> 个结果
+                        </div>
+                    </div>
+                    <!-- 修改网格布局以适应大一些的横向卡片 -->
+                    <div id="results" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <!-- 结果将在这里动态生成 -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

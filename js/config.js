@@ -21,7 +21,7 @@ const SITE_CONFIG = {
 
 // API站点配置
 const API_SITES = {
-    yzzy: {
+    youzhi: {
         api: 'https://api.yzzy-api.com/inc/apijson.php',
         name: '优质资源',
     },
@@ -29,15 +29,15 @@ const API_SITES = {
         api: 'https://cj.rycjapi.com/api.php/provide/vod',
         name: '如意资源',
     },
-    bfzy: {
+    baofeng: {
         api: 'https://bfzyapi.com/api.php/provide/vod',
         name: '暴风资源',
     },
-    tyyszy: {
+    tianya: {
         api: 'https://tyyszy.com/api.php/provide/vod',
         name: '天涯资源',
     },
-    ffzy: {
+    feifan: {
         api: 'http://ffzy5.tv/api.php/provide/vod',
         name: '非凡影视',
         detail: 'http://ffzy5.tv',

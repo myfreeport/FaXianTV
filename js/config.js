@@ -33,10 +33,6 @@ const API_SITES = {
         api: 'https://bfzyapi.com/api.php/provide/vod',
         name: '暴风资源',
     },
-    tianya: {
-        api: 'https://tyyszy.com/api.php/provide/vod',
-        name: '天涯资源',
-    },
     feifan: {
         api: 'http://ffzy5.tv/api.php/provide/vod',
         name: '非凡影视',

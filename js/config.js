@@ -35,7 +35,7 @@ const API_SITES = {
     },
     feifan: {
         api: 'http://ffzy5.tv/api.php/provide/vod',
-        name: '非凡影视',
+        name: '非凡资源',
         detail: 'http://ffzy5.tv',
     },
     testSource: {

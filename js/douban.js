@@ -1,6 +1,6 @@
 // 豆瓣热门电影电视剧推荐功能
 
-// 定义代理URL - 用于解决CORS和防盗链问题
+// CORS 代理配置
 const PROXY_URL = 'https://api.allorigins.win/raw?url=';
 
 // 豆瓣标签列表 - 修改为默认标签
@@ -523,20 +523,25 @@ function renderDoubanCards(data, container) {
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;');
             
-            // 处理图片URL
-            // 1. 直接使用豆瓣图片URL (添加no-referrer属性)
+            // 处理图片URL - 使用多层备选方案
             const originalCoverUrl = item.cover;
-            
-            // 2. 也准备代理URL作为备选
-            const proxiedCoverUrl = PROXY_URL + encodeURIComponent(originalCoverUrl);
+
+            // 1. 使用 images.weserv.nl 图片代理服务（主要方案）
+            const imageProxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(originalCoverUrl)}`;
+
+            // 2. 备选方案1：使用 CORS 代理
+            const corsProxyUrl = PROXY_URL + encodeURIComponent(originalCoverUrl);
+
+            // 3. 备选方案2：直接使用豆瓣图片URL (添加no-referrer属性)
+            const directUrl = originalCoverUrl;
             
             // 为不同设备优化卡片布局
             card.innerHTML = `
                 <div class="relative w-full aspect-[2/3] overflow-hidden cursor-pointer" onclick="fillAndSearchWithDouban('${safeTitle}')">
-                    <img src="${originalCoverUrl}" alt="${safeTitle}" 
+                    <img src="${imageProxyUrl}" alt="${safeTitle}"
                         class="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                        onerror="this.onerror=null; this.src='${proxiedCoverUrl}'; this.classList.add('object-contain');"
-                        loading="lazy" referrerpolicy="no-referrer">
+                        onerror="if(this.src!=='${corsProxyUrl}'){this.src='${corsProxyUrl}';}else if(this.src!=='${directUrl}'){this.src='${directUrl}';this.referrerPolicy='no-referrer';}else{this.style.display='none';this.parentElement.innerHTML+='<div class=\\'absolute inset-0 flex items-center justify-center bg-gray-800 text-gray-400 text-xs\\'>图片加载失败</div>';}"
+                        loading="lazy">
                     <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-60"></div>
                     <div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-sm">
                         <span class="text-yellow-400">★</span> ${safeRate}

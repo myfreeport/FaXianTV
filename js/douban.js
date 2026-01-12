@@ -454,36 +454,37 @@ async function fetchDoubanData(url) {
     };
 
     try {
-        // 尝试直接访问（豆瓣API可能允许部分CORS请求）
-        const response = await fetch(PROXY_URL + encodeURIComponent(url), fetchOptions);
+        // 使用CORS代理访问豆瓣API
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+        const response = await fetch(proxyUrl, fetchOptions);
         clearTimeout(timeoutId);
-        
+
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        
-        return await response.json();
+
+        const data = await response.json();
+
+        // 解析原始内容
+        if (data && data.contents) {
+            return JSON.parse(data.contents);
+        } else {
+            throw new Error("无法获取有效数据");
+        }
     } catch (err) {
-        console.error("豆瓣 API 请求失败（直接代理）：", err);
-        
-        // 失败后尝试备用方法：作为备选
-        const fallbackUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-        
+        console.error("豆瓣 API 请求失败：", err);
+
+        // 失败后尝试备用CORS代理
+        const fallbackUrl = `https://cors-anywhere.herokuapp.com/${url}`;
+
         try {
             const fallbackResponse = await fetch(fallbackUrl);
-            
+
             if (!fallbackResponse.ok) {
                 throw new Error(`备用API请求失败! 状态: ${fallbackResponse.status}`);
             }
-            
-            const data = await fallbackResponse.json();
-            
-            // 解析原始内容
-            if (data && data.contents) {
-                return JSON.parse(data.contents);
-            } else {
-                throw new Error("无法获取有效数据");
-            }
+
+            return await fallbackResponse.json();
         } catch (fallbackErr) {
             console.error("豆瓣 API 备用请求也失败：", fallbackErr);
             throw fallbackErr; // 向上抛出错误，让调用者处理
@@ -520,14 +521,18 @@ function renderDoubanCards(data, container) {
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;');
             
-            // 处理图片URL - 直接使用代理URL（修复豆瓣图片418错误问题）
-            const proxiedCoverUrl = PROXY_URL + encodeURIComponent(item.cover);
+            // 处理图片URL
+            const originalCoverUrl = item.cover;
+
+            // 使用公共图片代理服务解决豆瓣防盗链问题
+            const proxiedCoverUrl = `https://images.weserv.nl/?url=${encodeURIComponent(originalCoverUrl)}`;
 
             // 为不同设备优化卡片布局
             card.innerHTML = `
                 <div class="relative w-full aspect-[2/3] overflow-hidden cursor-pointer" onclick="fillAndSearchWithDouban('${safeTitle}')">
                     <img src="${proxiedCoverUrl}" alt="${safeTitle}"
-                        class="w-full h-full object-cover transition-transform duration-500 hover:scale-110 object-contain"
+                        class="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                        onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'flex items-center justify-center h-full bg-gray-800 text-gray-400\\'>图片加载失败</div>';"
                         loading="lazy">
                     <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-60"></div>
                     <div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-sm">

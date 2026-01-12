@@ -1,5 +1,9 @@
 // 豆瓣热门电影电视剧推荐功能
 
+// 代理服务器配置
+const PROXY_URL = 'https://corsproxy.io/?'; // API数据代理
+const IMAGE_PROXY_URL = 'https://images.weserv.nl/?url='; // 图片专用代理
+
 // 豆瓣标签列表 - 修改为默认标签
 let defaultMovieTags = ['热门', '最新', '经典', '豆瓣高分', '冷门佳片', '华语', '欧美', '韩国', '日本', '动作', '喜剧', '爱情', '科幻', '悬疑', '恐怖' , '国漫' , '日漫'];
 let defaultTvTags = ['热门', '美剧', '英剧', '韩剧', '日剧', '国产剧', '港剧', '日本动画', '综艺', '纪录片'];
@@ -454,11 +458,8 @@ async function fetchDoubanData(url) {
     };
 
     try {
-        // 检查 PROXY_URL 是否已定义，未定义则使用默认API代理
-        const apiProxy = typeof PROXY_URL !== 'undefined' ? PROXY_URL : 'https://api.allorigins.win/raw?url=';
-
         // 尝试直接访问（豆瓣API可能允许部分CORS请求）
-        const response = await fetch(apiProxy + encodeURIComponent(url), fetchOptions);
+        const response = await fetch(PROXY_URL + encodeURIComponent(url), fetchOptions);
         clearTimeout(timeoutId);
         
         if (!response.ok) {
@@ -467,29 +468,37 @@ async function fetchDoubanData(url) {
         
         return await response.json();
     } catch (err) {
-        console.error("豆瓣 API 请求失败（直接代理）：", err);
-        
-        // 失败后尝试备用方法：作为备选
-        const fallbackUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-        
+        console.error("豆瓣 API 请求失败（主代理）：", err);
+
+        // 失败后尝试备用代理：codetabs
+        const fallbackUrl1 = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
+
         try {
-            const fallbackResponse = await fetch(fallbackUrl);
-            
-            if (!fallbackResponse.ok) {
-                throw new Error(`备用API请求失败! 状态: ${fallbackResponse.status}`);
+            const fallbackResponse1 = await fetch(fallbackUrl1);
+
+            if (!fallbackResponse1.ok) {
+                throw new Error(`备用代理1请求失败! 状态: ${fallbackResponse1.status}`);
             }
-            
-            const data = await fallbackResponse.json();
-            
-            // 解析原始内容
-            if (data && data.contents) {
-                return JSON.parse(data.contents);
-            } else {
-                throw new Error("无法获取有效数据");
+
+            return await fallbackResponse1.json();
+        } catch (fallbackErr1) {
+            console.error("豆瓣 API 备用代理1失败：", fallbackErr1);
+
+            // 尝试第二个备用代理：allorigins
+            const fallbackUrl2 = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+
+            try {
+                const fallbackResponse2 = await fetch(fallbackUrl2);
+
+                if (!fallbackResponse2.ok) {
+                    throw new Error(`备用代理2请求失败! 状态: ${fallbackResponse2.status}`);
+                }
+
+                return await fallbackResponse2.json();
+            } catch (fallbackErr2) {
+                console.error("豆瓣 API 所有备用代理都失败：", fallbackErr2);
+                throw fallbackErr2; // 向上抛出错误，让调用者处理
             }
-        } catch (fallbackErr) {
-            console.error("豆瓣 API 备用请求也失败：", fallbackErr);
-            throw fallbackErr; // 向上抛出错误，让调用者处理
         }
     }
 }
@@ -524,15 +533,13 @@ function renderDoubanCards(data, container) {
                 .replace(/>/g, '&gt;');
             
             // 处理图片URL
-            // 1. 直接使用豆瓣图片URL (添加no-referrer属性)
+            // 1. 先尝试直接使用豆瓣图片URL (添加no-referrer属性)
             const originalCoverUrl = item.cover;
 
-            // 2. 检查 PROXY_URL 是否已定义，未定义则使用默认图片代理
-            const imageProxy = typeof PROXY_URL !== 'undefined' ? PROXY_URL : 'https://images.weserv.nl/?url=';
-
-            // 3. 准备代理URL作为备选（去掉协议前缀以适配 images.weserv.nl）
-            const urlWithoutProtocol = originalCoverUrl.replace(/^https?:\/\//, '');
-            const proxiedCoverUrl = imageProxy + encodeURIComponent(urlWithoutProtocol);
+            // 2. 准备使用专业图片代理作为备选
+            // images.weserv.nl 需要去掉协议前缀
+            const imageUrlWithoutProtocol = originalCoverUrl.replace(/^https?:\/\//, '');
+            const proxiedCoverUrl = IMAGE_PROXY_URL + imageUrlWithoutProtocol;
             
             // 为不同设备优化卡片布局
             card.innerHTML = `

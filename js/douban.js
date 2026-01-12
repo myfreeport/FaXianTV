@@ -1,35 +1,5 @@
 // 豆瓣热门电影电视剧推荐功能
 
-// CORS 代理 URL - 用于解决跨域问题
-const PROXY_URL = 'https://api.allorigins.win/raw?url=';
-
-// 处理豆瓣图片 URL - 替换为可访问的镜像地址
-function processDoubanImageUrl(url) {
-    if (!url) return '';
-
-    // 豆瓣图片域名列表
-    const doubanImageDomains = [
-        'img1.doubanio.com',
-        'img2.doubanio.com',
-        'img3.doubanio.com',
-        'img9.doubanio.com'
-    ];
-
-    // 检查是否是豆瓣图片URL
-    let processedUrl = url;
-    for (const domain of doubanImageDomains) {
-        if (url.includes(domain)) {
-            // 方案1: 使用豆瓣图片代理服务（推荐）
-            // 将 https://img3.doubanio.com 替换为 https://images.weserv.nl/?url=img3.doubanio.com
-            processedUrl = url.replace(/https?:\/\//, '');
-            processedUrl = `https://images.weserv.nl/?url=${processedUrl}`;
-            break;
-        }
-    }
-
-    return processedUrl;
-}
-
 // 豆瓣标签列表 - 修改为默认标签
 let defaultMovieTags = ['热门', '最新', '经典', '豆瓣高分', '冷门佳片', '华语', '欧美', '韩国', '日本', '动作', '喜剧', '爱情', '科幻', '悬疑', '恐怖' , '国漫' , '日漫'];
 let defaultTvTags = ['热门', '美剧', '英剧', '韩剧', '日剧', '国产剧', '港剧', '日本动画', '综艺', '纪录片'];
@@ -484,8 +454,11 @@ async function fetchDoubanData(url) {
     };
 
     try {
+        // 检查 PROXY_URL 是否已定义，未定义则使用默认API代理
+        const apiProxy = typeof PROXY_URL !== 'undefined' ? PROXY_URL : 'https://api.allorigins.win/raw?url=';
+
         // 尝试直接访问（豆瓣API可能允许部分CORS请求）
-        const response = await fetch(PROXY_URL + encodeURIComponent(url), fetchOptions);
+        const response = await fetch(apiProxy + encodeURIComponent(url), fetchOptions);
         clearTimeout(timeoutId);
         
         if (!response.ok) {
@@ -550,18 +523,23 @@ function renderDoubanCards(data, container) {
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;');
             
-            // 处理图片URL - 使用图片处理函数转换为可访问的地址
-            const processedCoverUrl = processDoubanImageUrl(item.cover);
+            // 处理图片URL
+            // 1. 直接使用豆瓣图片URL (添加no-referrer属性)
+            const originalCoverUrl = item.cover;
 
-            // 备用方案：如果处理后的URL也失败，使用CORS代理
-            const fallbackCoverUrl = PROXY_URL + encodeURIComponent(item.cover);
+            // 2. 检查 PROXY_URL 是否已定义，未定义则使用默认图片代理
+            const imageProxy = typeof PROXY_URL !== 'undefined' ? PROXY_URL : 'https://images.weserv.nl/?url=';
+
+            // 3. 准备代理URL作为备选（去掉协议前缀以适配 images.weserv.nl）
+            const urlWithoutProtocol = originalCoverUrl.replace(/^https?:\/\//, '');
+            const proxiedCoverUrl = imageProxy + encodeURIComponent(urlWithoutProtocol);
             
             // 为不同设备优化卡片布局
             card.innerHTML = `
                 <div class="relative w-full aspect-[2/3] overflow-hidden cursor-pointer" onclick="fillAndSearchWithDouban('${safeTitle}')">
-                    <img src="${processedCoverUrl}" alt="${safeTitle}"
+                    <img src="${originalCoverUrl}" alt="${safeTitle}" 
                         class="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                        onerror="this.onerror=null; this.src='${fallbackCoverUrl}';"
+                        onerror="this.onerror=null; this.src='${proxiedCoverUrl}'; this.classList.add('object-contain');"
                         loading="lazy" referrerpolicy="no-referrer">
                     <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-60"></div>
                     <div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-sm">

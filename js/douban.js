@@ -1,32 +1,33 @@
 // 豆瓣热门电影电视剧推荐功能
 
-// CORS 代理配置
+// CORS 代理 URL - 用于解决跨域问题
 const PROXY_URL = 'https://api.allorigins.win/raw?url=';
 
-// 图片加载错误处理函数 - 多层备选方案
-function handleImageError(img) {
-    const retryCount = parseInt(img.getAttribute('data-retry') || '0');
-    const originalUrl = img.getAttribute('data-original-url');
+// 处理豆瓣图片 URL - 替换为可访问的镜像地址
+function processDoubanImageUrl(url) {
+    if (!url) return '';
 
-    if (!originalUrl) return;
+    // 豆瓣图片域名列表
+    const doubanImageDomains = [
+        'img1.doubanio.com',
+        'img2.doubanio.com',
+        'img3.doubanio.com',
+        'img9.doubanio.com'
+    ];
 
-    if (retryCount === 0) {
-        // 第一次失败，尝试 CORS 代理
-        img.src = PROXY_URL + encodeURIComponent(originalUrl);
-        img.setAttribute('data-retry', '1');
-    } else if (retryCount === 1) {
-        // 第二次失败，尝试直接加载（带 no-referrer）
-        img.src = originalUrl;
-        img.referrerPolicy = 'no-referrer';
-        img.setAttribute('data-retry', '2');
-    } else {
-        // 所有方案都失败，显示错误提示
-        img.style.display = 'none';
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'absolute inset-0 flex items-center justify-center bg-gray-800 text-gray-400 text-xs';
-        errorDiv.textContent = '图片加载失败';
-        img.parentElement.appendChild(errorDiv);
+    // 检查是否是豆瓣图片URL
+    let processedUrl = url;
+    for (const domain of doubanImageDomains) {
+        if (url.includes(domain)) {
+            // 方案1: 使用豆瓣图片代理服务（推荐）
+            // 将 https://img3.doubanio.com 替换为 https://images.weserv.nl/?url=img3.doubanio.com
+            processedUrl = url.replace(/https?:\/\//, '');
+            processedUrl = `https://images.weserv.nl/?url=${processedUrl}`;
+            break;
+        }
     }
+
+    return processedUrl;
 }
 
 // 豆瓣标签列表 - 修改为默认标签
@@ -549,27 +550,19 @@ function renderDoubanCards(data, container) {
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;');
             
-            // 处理图片URL - 使用多层备选方案
-            const originalCoverUrl = item.cover;
+            // 处理图片URL - 使用图片处理函数转换为可访问的地址
+            const processedCoverUrl = processDoubanImageUrl(item.cover);
 
-            // 1. 使用 images.weserv.nl 图片代理服务（主要方案）
-            const imageProxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(originalCoverUrl)}`;
-
-            // 2. 备选方案1：使用 CORS 代理
-            const corsProxyUrl = PROXY_URL + encodeURIComponent(originalCoverUrl);
-
-            // 3. 备选方案2：直接使用豆瓣图片URL (添加no-referrer属性)
-            const directUrl = originalCoverUrl;
+            // 备用方案：如果处理后的URL也失败，使用CORS代理
+            const fallbackCoverUrl = PROXY_URL + encodeURIComponent(item.cover);
             
             // 为不同设备优化卡片布局
             card.innerHTML = `
                 <div class="relative w-full aspect-[2/3] overflow-hidden cursor-pointer" onclick="fillAndSearchWithDouban('${safeTitle}')">
-                    <img src="${imageProxyUrl}" alt="${safeTitle}"
-                        data-original-url="${directUrl}"
-                        data-retry="0"
+                    <img src="${processedCoverUrl}" alt="${safeTitle}"
                         class="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                        onerror="handleImageError(this)"
-                        loading="lazy">
+                        onerror="this.onerror=null; this.src='${fallbackCoverUrl}';"
+                        loading="lazy" referrerpolicy="no-referrer">
                     <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-60"></div>
                     <div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-sm">
                         <span class="text-yellow-400">★</span> ${safeRate}
